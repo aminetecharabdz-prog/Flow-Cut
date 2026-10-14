@@ -1,6 +1,6 @@
-import 'dart:io';
-
 import 'package:supabase_flutter/supabase_flutter.dart';
+
+import 'media.dart';
 
 SupabaseClient get supabase => Supabase.instance.client;
 
@@ -44,15 +44,14 @@ bool isVideoFile(String path) => mimeOf(path).startsWith('video/');
 /// Upload a local file under `<user>/<project>/<name>` and register it as an asset.
 Future<String> uploadAsset({
   required String projectId,
-  required File file,
+  required LocalMedia media,
   required String bucket,
   required String kind,
   required String name,
   int? durationMs,
 }) async {
-  final path = '$currentUserId/$projectId/$name.${extOf(file.path)}';
-  final mime = mimeOf(file.path);
-  await supabase.storage.from(bucket).upload(path, file, fileOptions: FileOptions(contentType: mime, upsert: true));
+  final path = '$currentUserId/$projectId/$name.${extOf(media.name)}';
+  await supabase.storage.from(bucket).uploadBinary(path, media.bytes, fileOptions: FileOptions(contentType: media.mime, upsert: true));
   final row = await supabase
       .from('assets')
       .upsert({
@@ -60,8 +59,8 @@ Future<String> uploadAsset({
         'kind': kind,
         'bucket': bucket,
         'path': path,
-        'mime_type': mime,
-        'size_bytes': await file.length(),
+        'mime_type': media.mime,
+        'size_bytes': media.bytes.length,
         'duration_ms': ?durationMs,
       }, onConflict: 'bucket,path')
       .select('id')

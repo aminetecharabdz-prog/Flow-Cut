@@ -1,8 +1,7 @@
-import 'dart:io';
-
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
 
+import '../media.dart';
 import '../options.dart';
 import '../services.dart';
 import '../widgets/audio_input.dart';
@@ -29,7 +28,7 @@ class _WizardScreenState extends State<WizardScreen> {
   String _businessType = 'ecommerce';
   String _goal = 'content_marketing';
   String _videoType = 'motion_graphics';
-  File? _logo;
+  LocalMedia? _logo;
   Color _primary = const Color(0xFFFFC83D);
   Color _secondary = const Color(0xFFFF4F7B);
   Color _background = const Color(0xFF0E1230);
@@ -41,8 +40,8 @@ class _WizardScreenState extends State<WizardScreen> {
   String _captionLang = 'same';
   String _script = 'arabic';
   final _idea = TextEditingController();
-  final List<File> _productImages = [];
-  final List<File> _media = [];
+  final List<LocalMedia> _productImages = [];
+  final List<LocalMedia> _media = [];
   final _productName = TextEditingController();
   final _price = TextEditingController();
   final _oldPrice = TextEditingController();
@@ -55,7 +54,7 @@ class _WizardScreenState extends State<WizardScreen> {
   String _pace = 'medium';
   String _aspect = '9:16';
   bool _sfx = true;
-  File? _music;
+  LocalMedia? _music;
   final _handle = TextEditingController();
   final _phone = TextEditingController();
   final _website = TextEditingController();
@@ -70,15 +69,9 @@ class _WizardScreenState extends State<WizardScreen> {
     super.dispose();
   }
 
-  Future<File?> _pickOne(FileType type) async {
-    final files = await FilePicker.pickFiles(type: type);
-    final p = files.isEmpty ? null : files.first.path;
-    return p == null ? null : File(p);
-  }
-
-  Future<List<File>> _pickMany(FileType type) async {
-    final files = await FilePicker.pickFiles(type: type);
-    return files.map((f) => f.path).whereType<String>().map(File.new).toList();
+  Future<LocalMedia?> _pickOne(FileType type) async {
+    final files = await pickMedia(type);
+    return files.isEmpty ? null : files.first;
   }
 
   bool _validateStep(int step) {
@@ -163,7 +156,7 @@ class _WizardScreenState extends State<WizardScreen> {
       setState(() => _busyLabel = 'رفع التعليق الصوتي...');
       final audioId = await uploadAsset(
         projectId: pid,
-        file: audio.file,
+        media: audio.media,
         bucket: 'audio',
         kind: audio.isVideo ? 'source_video' : 'source_audio',
         name: 'source',
@@ -173,20 +166,20 @@ class _WizardScreenState extends State<WizardScreen> {
 
       if (_logo != null) {
         setState(() => _busyLabel = 'رفع الشعار...');
-        await uploadAsset(projectId: pid, file: _logo!, bucket: 'brand', kind: 'logo', name: 'logo');
+        await uploadAsset(projectId: pid, media: _logo!, bucket: 'brand', kind: 'logo', name: 'logo');
       }
       for (var i = 0; i < _productImages.length; i++) {
         setState(() => _busyLabel = 'رفع صور المنتج ${i + 1}/${_productImages.length}...');
-        await uploadAsset(projectId: pid, file: _productImages[i], bucket: 'product-images', kind: 'product_image', name: 'product_$i');
+        await uploadAsset(projectId: pid, media: _productImages[i], bucket: 'product-images', kind: 'product_image', name: 'product_$i');
       }
       for (var i = 0; i < _media.length; i++) {
         setState(() => _busyLabel = 'رفع الصور والمقاطع ${i + 1}/${_media.length}...');
         final f = _media[i];
-        await uploadAsset(projectId: pid, file: f, bucket: 'product-images', kind: isVideoFile(f.path) ? 'media_video' : 'media_image', name: 'media_$i');
+        await uploadAsset(projectId: pid, media: f, bucket: 'product-images', kind: f.isVideo ? 'media_video' : 'media_image', name: 'media_$i');
       }
       if (_music != null) {
         setState(() => _busyLabel = 'رفع الموسيقى...');
-        await uploadAsset(projectId: pid, file: _music!, bucket: 'audio', kind: 'music', name: 'music');
+        await uploadAsset(projectId: pid, media: _music!, bucket: 'audio', kind: 'music', name: 'music');
       }
 
       setState(() => _busyLabel = 'بدء التوليد...');
@@ -317,7 +310,7 @@ class _WizardScreenState extends State<WizardScreen> {
             ),
             if (_logo != null) ...[
               const SizedBox(width: 12),
-              ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.file(_logo!, width: 44, height: 44, fit: BoxFit.cover)),
+              ClipRRect(borderRadius: BorderRadius.circular(8), child: Image.memory(_logo!.bytes, width: 44, height: 44, fit: BoxFit.cover)),
               IconButton(onPressed: () => setState(() => _logo = null), icon: const Icon(Icons.close)),
             ],
           ]),
@@ -409,7 +402,7 @@ class _WizardScreenState extends State<WizardScreen> {
           subtitle: 'صور المنتج (حتى 10) والسعر والعرض.',
           child: Column(children: [
             _thumbRow(_productImages, () async {
-              final picked = await _pickMany(FileType.image);
+              final picked = await pickMedia(FileType.image);
               setState(() => _productImages.addAll(picked.take(10 - _productImages.length)));
             }),
             const SizedBox(height: 12),
@@ -430,7 +423,7 @@ class _WizardScreenState extends State<WizardScreen> {
           title: 'الصور والمقاطع',
           subtitle: _videoType == 'media_montage' ? 'مطلوب للمونتاج: صور ومقاطع قصيرة.' : 'اختياري: صور أو مقاطع تظهر في بعض المشاهد.',
           child: _thumbRow(_media, () async {
-            final picked = await _pickMany(FileType.media);
+            final picked = await pickMedia(FileType.media);
             setState(() => _media.addAll(picked.take(20 - _media.length)));
           }),
         ),
@@ -442,7 +435,7 @@ class _WizardScreenState extends State<WizardScreen> {
     ]);
   }
 
-  Widget _thumbRow(List<File> files, VoidCallback onAdd) {
+  Widget _thumbRow(List<LocalMedia> files, VoidCallback onAdd) {
     return SizedBox(
       height: 84,
       child: ListView(scrollDirection: Axis.horizontal, children: [
@@ -461,9 +454,9 @@ class _WizardScreenState extends State<WizardScreen> {
             child: Stack(children: [
               ClipRRect(
                 borderRadius: BorderRadius.circular(12),
-                child: isVideoFile(files[i].path)
+                child: files[i].isVideo
                     ? Container(width: 84, height: 84, color: Colors.black26, child: const Icon(Icons.movie))
-                    : Image.file(files[i], width: 84, height: 84, fit: BoxFit.cover),
+                    : Image.memory(files[i].bytes, width: 84, height: 84, fit: BoxFit.cover),
               ),
               Positioned(
                 top: 2,
@@ -550,7 +543,7 @@ class _WizardScreenState extends State<WizardScreen> {
           ListTile(
             contentPadding: EdgeInsets.zero,
             leading: const Icon(Icons.music_note),
-            title: Text(_music == null ? 'بدون موسيقى خلفية' : _music!.path.split('/').last, maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(_music == null ? 'بدون موسيقى خلفية' : _music!.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: const Text('ارفع موسيقى مرخّصة لك، وتنخفض تلقائياً أثناء الكلام'),
             trailing: _music == null
                 ? TextButton(

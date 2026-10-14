@@ -1,3 +1,4 @@
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
@@ -29,7 +30,12 @@ class _LoginScreenState extends State<LoginScreen> {
     setState(() => _loading = true);
     try {
       if (_isSignUp) {
-        final res = await supabase.auth.signUp(email: _email.text.trim(), password: _password.text);
+        final res = await supabase.auth.signUp(
+          email: _email.text.trim(),
+          password: _password.text,
+          // On the web, the confirmation link brings the user back to this site.
+          emailRedirectTo: kIsWeb ? Uri.base.toString() : null,
+        );
         if (res.session == null && mounted) showSnack(context, 'تم إنشاء الحساب. افتح رسالة التأكيد في بريدك ثم سجّل الدخول.');
       } else {
         await supabase.auth.signInWithPassword(email: _email.text.trim(), password: _password.text);
@@ -49,7 +55,7 @@ class _LoginScreenState extends State<LoginScreen> {
       return;
     }
     try {
-      await supabase.auth.resetPasswordForEmail(_email.text.trim());
+      await supabase.auth.resetPasswordForEmail(_email.text.trim(), redirectTo: kIsWeb ? Uri.base.toString() : null);
       if (mounted) showSnack(context, 'أرسلنا لك رسالة لتغيير كلمة المرور.');
     } on AuthException catch (e) {
       if (mounted) showSnack(context, e.message);

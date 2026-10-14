@@ -1,37 +1,26 @@
 import 'dart:async';
-import 'dart:io';
 
 import 'package:file_picker/file_picker.dart';
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:record/record.dart';
-import 'package:video_player/video_player.dart';
 
+import '../media.dart';
 import '../services.dart';
 import 'common.dart';
 
 /// The chosen voice-over: a recording or an uploaded audio/video file.
 class AudioSource {
-  AudioSource(this.file, this.durationMs, {required this.recorded});
-  final File file;
+  AudioSource(this.media, this.durationMs, {required this.recorded});
+  final LocalMedia media;
   final int durationMs;
   final bool recorded;
-  bool get isVideo => isVideoFile(file.path);
+  bool get isVideo => media.isVideo;
 }
 
 const _maxMs = 180000;
 const _minMs = 5000;
-
-/// Read a media file's duration with the platform player.
-Future<int> mediaDurationMs(File file) async {
-  final c = VideoPlayerController.file(file);
-  try {
-    await c.initialize();
-    return c.value.duration.inMilliseconds;
-  } finally {
-    await c.dispose();
-  }
-}
 
 class AudioInput extends StatefulWidget {
   const AudioInput({super.key, required this.value, required this.onChanged});
@@ -62,9 +51,12 @@ class _AudioInputState extends State<AudioInput> {
       if (mounted) showSnack(context, 'اسمح للتطبيق باستعمال الميكروفون من الإعدادات.');
       return;
     }
-    final dir = await getTemporaryDirectory();
-    final path = '${dir.path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
-    await _recorder.start(const RecordConfig(encoder: AudioEncoder.aacLc, bitRate: 128000, sampleRate: 44100, numChannels: 1), path: path);
+    // Browsers record Opus/WebM; phones record AAC/M4A.
+    final path = kIsWeb ? '' : '${(await getTemporaryDirectory()).path}/voice_${DateTime.now().millisecondsSinceEpoch}.m4a';
+    await _recorder.start(
+      RecordConfig(encoder: kIsWeb ? AudioEncoder.opus : AudioEncoder.aacLc, bitRate: 128000, sampleRate: 48000, numChannels: 1),
+      path: path,
+    );
     widget.onChanged(null);
     setState(() {
       _recording = true;
@@ -96,29 +88,26 @@ class _AudioInputState extends State<AudioInput> {
       if (mounted) showSnack(context, 'التسجيل قصير جداً، 5 ثواني على الأقل.');
       return;
     }
-    widget.onChanged(AudioSource(File(path), _elapsedMs, recorded: true));
+    final media = await LocalMedia.fromRecording(path, kIsWeb ? 'voice.webm' : 'voice.m4a');
+    widget.onChanged(AudioSource(media, _elapsedMs, recorded: true));
   }
 
   Future<void> _pick() async {
-    final files = await FilePicker.pickFiles(
-      type: FileType.custom,
-      allowedExtensions: const ['mp3', 'm4a', 'wav', 'aac', 'ogg', 'mp4', 'mov', 'webm'],
-    );
-    final path = files.isEmpty ? null : files.first.path;
-    if (path == null) return;
     setState(() => _loading = true);
     try {
-      final file = File(path);
-      if (await file.length() > 50 * 1024 * 1024) {
+      final files = await pickMedia(FileType.custom, extensions: const ['mp3', 'm4a', 'wav', 'aac', 'ogg', 'webm', 'mp4', 'mov']);
+      if (files.isEmpty) return;
+      final media = files.first;
+      if (media.bytes.length > 50 * 1024 * 1024) {
         if (mounted) showSnack(context, 'الملف أكبر من 50 ميغا.');
         return;
       }
-      final ms = await mediaDurationMs(file);
+      final ms = await mediaDurationMs(media);
       if (ms < _minMs || ms > _maxMs) {
         if (mounted) showSnack(context, 'مدة الصوت يجب أن تكون بين 5 ثواني و3 دقائق.');
         return;
       }
-      widget.onChanged(AudioSource(file, ms, recorded: false));
+      widget.onChanged(AudioSource(media, ms, recorded: false));
     } catch (_) {
       if (mounted) showSnack(context, 'تعذّر قراءة هذا الملف.');
     } finally {
@@ -159,7 +148,7 @@ class _AudioInputState extends State<AudioInput> {
           color: cs.primaryContainer,
           child: ListTile(
             leading: Icon(v.isVideo ? Icons.videocam : (v.recorded ? Icons.mic : Icons.audio_file)),
-            title: Text(v.recorded ? 'تسجيل صوتي' : v.file.path.split('/').last, maxLines: 1, overflow: TextOverflow.ellipsis),
+            title: Text(v.recorded ? 'تسجيل صوتي' : v.media.name, maxLines: 1, overflow: TextOverflow.ellipsis),
             subtitle: Text('المدة ${formatSeconds(v.durationMs ~/ 1000)}${v.isVideo ? ' · فيديو' : ''}'),
             trailing: IconButton(icon: const Icon(Icons.close), onPressed: () => widget.onChanged(null)),
           ),

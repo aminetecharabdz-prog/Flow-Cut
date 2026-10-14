@@ -1,8 +1,10 @@
 import 'dart:io';
 
+import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
+import 'package:url_launcher/url_launcher.dart';
 import 'package:video_player/video_player.dart';
 
 import '../options.dart';
@@ -191,6 +193,11 @@ class _ResultScreenState extends State<ResultScreen> {
     final assetId = (_export?['video_asset_id'] ?? _project?['preview_asset_id']) as String?;
     final url = await signedUrlForAsset(assetId);
     if (url == null) return;
+    if (kIsWeb) {
+      // In the browser: open the file in a new tab (play / download from there).
+      await launchUrl(Uri.parse('$url&download=motioncut.mp4'), webOnlyWindowName: '_blank');
+      return;
+    }
     setState(() => _sharing = true);
     try {
       final client = HttpClient();
@@ -251,7 +258,7 @@ class _ResultScreenState extends State<ResultScreen> {
         FilledButton.icon(
           onPressed: _sharing ? null : _share,
           icon: _sharing ? const SizedBox(width: 18, height: 18, child: CircularProgressIndicator(strokeWidth: 2)) : const Icon(Icons.ios_share),
-          label: Padding(padding: const EdgeInsets.all(12), child: Text(_export != null ? 'حفظ / مشاركة النسخة النهائية' : 'حفظ / مشاركة المعاينة')),
+          label: Padding(padding: const EdgeInsets.all(12), child: Text(kIsWeb ? (_export != null ? 'تحميل النسخة النهائية' : 'تحميل المعاينة') : (_export != null ? 'حفظ / مشاركة النسخة النهائية' : 'حفظ / مشاركة المعاينة'))),
         ),
         const SizedBox(height: 10),
         Row(children: [

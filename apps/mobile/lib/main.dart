@@ -48,6 +48,11 @@ class MotionCutApp extends StatelessWidget {
         scaffoldBackgroundColor: scheme.surface,
         inputDecorationTheme: const InputDecorationTheme(filled: true),
       ),
+      // On wide screens (the web app on a computer) keep a phone-like column.
+      builder: (context, child) => ColoredBox(
+        color: scheme.surface,
+        child: Center(child: ConstrainedBox(constraints: const BoxConstraints(maxWidth: 680), child: child)),
+      ),
       home: const AuthGate(),
     );
   }
