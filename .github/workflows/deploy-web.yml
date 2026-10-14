@@ -35,6 +35,8 @@ jobs:
       - run: flutter build web --release --base-href /Flow-Cut/ --no-web-resources-cdn
       # Deep links (e.g. after email confirmation) should still load the app.
       - run: cp build/web/index.html build/web/404.html
+      # Retire the caching service worker older visits may have installed.
+      - run: cp web_extra/flutter_service_worker.js build/web/flutter_service_worker.js
       - uses: actions/upload-pages-artifact@v3
         with:
           path: apps/mobile/build/web

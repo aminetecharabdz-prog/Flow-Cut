@@ -13,7 +13,7 @@ const _envKey = String.fromEnvironment('SUPABASE_KEY');
 const supabaseUrl = _envUrl == '' ? 'https://ukekgjillyhxbiexewpi.supabase.co' : _envUrl;
 const supabaseKey = _envKey == '' ? 'sb_publishable_AUhKj0D_LkM_cKkn2dWB9A_BFT5Zsij' : _envKey;
 
-const appVersion = '1.1.0';
+const appVersion = '1.1.1';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
