@@ -1,11 +1,11 @@
 name: Deploy web app
 
-# Builds the Flutter app for the web and publishes it on GitHub Pages:
+# Builds the web app (apps/web, Vite + React) and publishes it on GitHub Pages:
 # https://aminetecharabdz-prog.github.io/Flow-Cut/
 on:
   push:
     paths:
-      - 'apps/mobile/**'
+      - 'apps/web/**'
       - '.github/workflows/deploy-web.yml'
   workflow_dispatch:
 
@@ -23,23 +23,22 @@ jobs:
     runs-on: ubuntu-latest
     defaults:
       run:
-        working-directory: apps/mobile
+        working-directory: apps/web
     steps:
       - uses: actions/checkout@v4
-      - uses: subosito/flutter-action@v2
+      - uses: actions/setup-node@v4
         with:
-          channel: stable
-          cache: true
-      - run: flutter pub get
-      - run: flutter analyze
-      - run: flutter build web --release --base-href /Flow-Cut/ --no-web-resources-cdn
+          node-version: 22
+          cache: npm
+          cache-dependency-path: apps/web/package-lock.json
+      - run: npm ci
+      - run: npm run build
       # Deep links (e.g. after email confirmation) should still load the app.
-      - run: cp build/web/index.html build/web/404.html
-      # Retire the caching service worker older visits may have installed.
-      - run: cp web_extra/flutter_service_worker.js build/web/flutter_service_worker.js
+      - run: cp dist/index.html dist/404.html
+      # public/flutter_service_worker.js retires the caching worker the old Flutter site installed.
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: apps/mobile/build/web
+          path: apps/web/dist
 
   deploy:
     needs: build

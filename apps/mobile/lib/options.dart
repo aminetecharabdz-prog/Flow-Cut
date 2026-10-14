@@ -47,12 +47,12 @@ class StyleOpt {
 }
 
 const styles = [
-  StyleOpt('vivid', 'حيوي', 'حركة مرحة وألوان مشبعة', Color(0xFF0E1230), Color(0xFFFFC83D), Color(0xFFFF4F7B), 'MC Lalezar'),
-  StyleOpt('luxury', 'فاخر', 'داكن، هادئ وواثق', Color(0xFF0B0A08), Color(0xFFD4A64A), Color(0xFF8E1F2F), 'MC El Messiri'),
-  StyleOpt('poster', 'ملصق', 'كتابة ضخمة تخبط على الإيقاع', Color(0xFFF4EFE6), Color(0xFFFFD400), Color(0xFFE63946), 'MC Baloo Bhaijaan'),
-  StyleOpt('clean', 'بسيط', 'نظيف واحترافي', Color(0xFFFAFAF7), Color(0xFF2563EB), Color(0xFFF59E0B), 'MC Alexandria'),
-  StyleOpt('neon', 'نيون', 'متوهج وتقني', Color(0xFF07020F), Color(0xFFA855F7), Color(0xFF22D3EE), 'MC Changa'),
-  StyleOpt('editorial', 'صحفي', 'رصين مثل مجلة', Color(0xFFF7F3EA), Color(0xFFC2410C), Color(0xFF1E3A8A), 'MC Readex Pro'),
+  StyleOpt('vivid', 'طاقة', 'مرح وسريع', Color(0xFF0E1230), Color(0xFFFFC83D), Color(0xFFFF4F7B), 'MC Lalezar'),
+  StyleOpt('luxury', 'أناقة', 'داكن وراقٍ', Color(0xFF0B0A08), Color(0xFFD4A64A), Color(0xFF8E1F2F), 'MC El Messiri'),
+  StyleOpt('poster', 'جرأة', 'كتابة عريضة', Color(0xFFF4EFE6), Color(0xFFFFD400), Color(0xFFE63946), 'MC Baloo Bhaijaan'),
+  StyleOpt('clean', 'صفاء', 'بسيط ونظيف', Color(0xFFFAFAF7), Color(0xFF2563EB), Color(0xFFF59E0B), 'MC Alexandria'),
+  StyleOpt('neon', 'ليل', 'متوهج وتقني', Color(0xFF07020F), Color(0xFFA855F7), Color(0xFF22D3EE), 'MC Changa'),
+  StyleOpt('editorial', 'حبر', 'رصين كالمجلة', Color(0xFFF7F3EA), Color(0xFFC2410C), Color(0xFF1E3A8A), 'MC Readex Pro'),
 ];
 
 class FontOpt {

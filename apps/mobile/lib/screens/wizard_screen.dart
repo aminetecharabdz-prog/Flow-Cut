@@ -201,7 +201,7 @@ class _WizardScreenState extends State<WizardScreen> {
 
   @override
   Widget build(BuildContext context) {
-    const titles = ['المشروع', 'الاستوديو', 'الأسلوب'];
+    const titles = ['فكرتك', 'صوتك', 'لمستك'];
     return PopScope(
       canPop: _step == 0 && !_busy,
       onPopInvokedWithResult: (didPop, _) {
@@ -558,7 +558,7 @@ class _WizardScreenState extends State<WizardScreen> {
       ),
       Section(
         number: 7,
-        title: 'كرت النهاية',
+        title: 'خاتمة الفيديو',
         subtitle: 'آخر ما يشوفه الزبون: كيفاش يتواصل معاك. اتركه فارغاً إن لم تحتجه.',
         child: Column(children: [
           TextField(controller: _handle, textDirection: TextDirection.ltr, decoration: const InputDecoration(labelText: 'الحساب (@...)', border: OutlineInputBorder())),
@@ -592,12 +592,12 @@ class _WizardScreenState extends State<WizardScreen> {
           Expanded(
             child: Center(
               child: Column(mainAxisSize: MainAxisSize.min, children: [
-                Text('أهلاً بيك', style: TextStyle(fontFamily: s.font, color: fg, fontSize: 18, fontWeight: FontWeight.w800)),
+                Text('صوتك', style: TextStyle(fontFamily: s.font, color: fg, fontSize: 18, fontWeight: FontWeight.w800)),
                 const SizedBox(height: 4),
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 1),
                   decoration: BoxDecoration(color: primary, borderRadius: BorderRadius.circular(s.id == 'poster' ? 0 : 8)),
-                  child: Text('مايك إيت', style: TextStyle(fontFamily: s.font, color: primary.computeLuminance() > 0.45 ? Colors.black : Colors.white, fontSize: 14)),
+                  child: Text('يصير فيديو', style: TextStyle(fontFamily: s.font, color: primary.computeLuminance() > 0.45 ? Colors.black : Colors.white, fontSize: 14)),
                 ),
               ]),
             ),
