@@ -54,7 +54,8 @@ Future<String> uploadAsset({
   await supabase.storage.from(bucket).uploadBinary(path, media.bytes, fileOptions: FileOptions(contentType: media.mime, upsert: true));
   final row = await supabase
       .from('assets')
-      .upsert({
+      // Insert only: clients may not update assets (RLS), and each project has fresh paths.
+      .insert({
         'project_id': projectId,
         'kind': kind,
         'bucket': bucket,
@@ -62,7 +63,7 @@ Future<String> uploadAsset({
         'mime_type': media.mime,
         'size_bytes': media.bytes.length,
         'duration_ms': ?durationMs,
-      }, onConflict: 'bucket,path')
+      })
       .select('id')
       .single();
   return row['id'] as String;
