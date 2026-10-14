@@ -75,6 +75,13 @@ const setProgress = async (job: Row, stage: string, progress: number) => {
   await db.from('jobs').update({ stage, progress: Math.round(Math.min(99, progress)) }).eq('id', job.id);
 };
 
+/** Drop null/empty fields (the app stores unset optional fields as null). */
+const compact = <T extends Row>(o: T | null | undefined): Partial<T> | undefined => {
+  if (!o) return undefined;
+  const out = Object.fromEntries(Object.entries(o).filter(([, v]) => v !== null && v !== undefined && v !== '')) as Partial<T>;
+  return Object.keys(out).length ? out : undefined;
+};
+
 const settingsFrom = (p: Row): ProjectSettings => {
   const style = (STYLE_IDS as readonly string[]).includes(p.template_id) ? (p.template_id as StyleId) : 'vivid';
   const font = (FONT_IDS as readonly string[]).includes(p.font_id) ? (p.font_id as FontId) : undefined;
@@ -94,8 +101,8 @@ const settingsFrom = (p: Row): ProjectSettings => {
     captionMode: (p.caption_mode ?? 'word_box') as CaptionMode,
     aspect: (p.aspect_ratio ?? '9:16') as AspectRatio,
     sfx: p.sfx ?? true,
-    product: p.product ?? undefined,
-    endCard: p.end_card && Object.values(p.end_card).some(Boolean) ? p.end_card : undefined,
+    product: compact(p.product),
+    endCard: compact(p.end_card),
   };
 };
 
@@ -385,7 +392,7 @@ const processJob = async (job: Row) => {
   } catch (err) {
     const message = err instanceof Error ? err.message : String(err);
     console.error(`[${WORKER_ID}] job ${job.id} failed:`, err);
-    await db.rpc('fail_job', { p_job_id: job.id, p_error: message.slice(0, 500), p_retryable: !(err instanceof PermanentError) });
+    await db.rpc('fail_job', { p_job_id: job.id, p_error: message.slice(0, 500), p_retryable: !(err instanceof PermanentError || (err as Error)?.name === 'ZodError') });
   }
 };
 

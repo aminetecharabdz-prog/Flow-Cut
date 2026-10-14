@@ -74,3 +74,17 @@ test('toSrt writes numbered cues', () => {
   const srt = toSrt(words);
   assert.match(srt, /^1\n00:00:00,200 --> /);
 });
+
+test('null optional fields from the database never reach the plan', () => {
+  const plan = VideoPlan.parse(
+    resolvePlanIcons(
+      assemblePlan({
+        settings: { ...settings, endCard: { phone: '0799', handle: undefined }, product: undefined },
+        words,
+        durationMs: 6500,
+        drafts: rulePlanner(words, settings),
+      }),
+    ),
+  );
+  assert.equal(plan.endCard?.phone, '0799');
+});
