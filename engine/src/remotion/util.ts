@@ -88,3 +88,19 @@ export const isEmphasis = (token: string, emphasis: string[]) => {
   const n = normalizeWord(token);
   return n.length > 0 && emphasis.some((e) => splitWords(e).some((p) => normalizeWord(p) === n));
 };
+
+/** WCAG contrast ratio between two hex colours. */
+export const contrast = (a: string, b: string) => {
+  const la = luminanceOf(a);
+  const lb = luminanceOf(b);
+  return (Math.max(la, lb) + 0.05) / (Math.min(la, lb) + 0.05);
+};
+
+function luminanceOf(hex: string) {
+  const n = parseInt(hex.slice(1), 16);
+  const [r, g, b] = [(n >> 16) & 255, (n >> 8) & 255, n & 255].map((v) => {
+    const s = v / 255;
+    return s <= 0.03928 ? s / 12.92 : ((s + 0.055) / 1.055) ** 2.4;
+  });
+  return 0.2126 * r + 0.7152 * g + 0.0722 * b;
+}

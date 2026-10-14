@@ -58,7 +58,7 @@ test('assemblePlan produces a valid, contiguous VideoPlan and downgrades impossi
 test('rulePlanner always returns a usable plan', () => {
   const drafts = rulePlanner(words, settings);
   assert.ok(drafts.length >= 2);
-  assert.equal(drafts[0].layout, 'hook');
+  assert.ok(['hook', 'visual'].includes(drafts[0].layout), 'opens with a hook or a visual');
   const plan = VideoPlan.parse(resolvePlanIcons(assemblePlan({ settings, words, durationMs: 6500, drafts })));
   assert.ok(plan.scenes.length >= 2);
 });

@@ -17,6 +17,7 @@ import { LAYOUTS } from './components/Layouts';
 import { Backdrop } from './components/Visuals';
 import { SceneProvider, ThemeProvider, useTheme } from './context';
 import { loadFonts } from './fonts';
+import { scenePalette } from './surfaces';
 import { clamp } from './util';
 
 const msToFrame = (ms: number, fps: number) => Math.round((ms / 1000) * fps);
@@ -74,6 +75,30 @@ const SceneShell: React.FC<{ scene: Scene; index: number; frames: number; childr
       break;
   }
   return <AbsoluteFill style={{ transform, opacity, clipPath, filter }}>{children}</AbsoluteFill>;
+};
+
+/** Scene background colour, revealed with a growing circle or a diagonal wipe. */
+const SceneSurface: React.FC<{ scene: Scene; index: number; color: string | null }> = ({ scene, index, color }) => {
+  const frame = useCurrentFrame();
+  const { u } = useTheme();
+  if (!color) return null;
+  const p = index === 0 ? 1 : 1 - (1 - clamp(frame / 13)) ** 3;
+  const kind = random(`surf${scene.id}`);
+  const ox = random(`ox${scene.id}`) > 0.5 ? 100 : 0;
+  const oy = random(`oy${scene.id}`) > 0.5 ? 100 : 0;
+  const clipPath =
+    kind < 0.6 ? `circle(${p * 150}% at ${ox}% ${oy}%)` : `polygon(0 0, ${p * 220}% 0, ${p * 220 - 120}% 100%, 0 100%)`;
+  return (
+    <AbsoluteFill style={{ clipPath, background: color }}>
+      <AbsoluteFill
+        style={{
+          backgroundImage: `radial-gradient(rgba(255,255,255,0.10) ${2.4 * u}px, transparent ${2.6 * u}px)`,
+          backgroundSize: `${46 * u}px ${46 * u}px`,
+          opacity: 0.8,
+        }}
+      />
+    </AbsoluteFill>
+  );
 };
 
 type Rect = { top: number; height: number; opacity: number; radius: number };
@@ -226,14 +251,19 @@ export const MotionVideo: React.FC<VideoPlan> = (plan) => {
           const from = msToFrame(scene.startMs, fps);
           const frames = Math.max(1, msToFrame(scene.endMs, fps) - from);
           const Layout = LAYOUTS[scene.layout];
-          const accent = scene.accent === 'secondary' ? plan.palette.secondary : plan.palette.primary;
+          const palette = scenePalette(plan.palette, scene);
+          const scenePlan = palette === plan.palette ? plan : { ...plan, palette };
+          const accent = scene.accent === 'secondary' ? palette.secondary : palette.primary;
           return (
             <Sequence key={scene.id} from={from} durationInFrames={frames} name={`${index + 1}. ${scene.layout}`}>
-              <SceneProvider value={{ scene, index, frames, accent, frameAt: (ms) => msToFrame(ms, fps) - from }}>
-                <SceneShell scene={scene} index={index} frames={frames}>
-                  <Layout />
-                </SceneShell>
-              </SceneProvider>
+              <ThemeProvider plan={scenePlan}>
+                <SceneSurface scene={scene} index={index} color={palette === plan.palette ? null : palette.background} />
+                <SceneProvider value={{ scene, index, frames, accent, frameAt: (ms) => msToFrame(ms, fps) - from }}>
+                  <SceneShell scene={scene} index={index} frames={frames}>
+                    <Layout />
+                  </SceneShell>
+                </SceneProvider>
+              </ThemeProvider>
             </Sequence>
           );
         })}

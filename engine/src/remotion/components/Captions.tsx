@@ -2,6 +2,7 @@ import React, { useMemo } from 'react';
 import { AbsoluteFill, spring, useCurrentFrame, useVideoConfig } from 'remotion';
 import type { Word } from '../../plan/schema';
 import { useTheme } from '../context';
+import { scenePalette } from '../surfaces';
 import { alpha, isRtlText, onColor } from '../util';
 
 type Chunk = { words: Word[]; startMs: number; endMs: number };
@@ -44,10 +45,12 @@ export const Captions: React.FC<{ hiddenRanges?: [number, number][] }> = ({ hidd
   const p = spring({ frame: frame - enterFrame, fps, config: { damping: 14, stiffness: 200, mass: 0.5 } });
   const text = chunk.words.map((w) => w.text).join(' ');
   const rtl = isRtlText(text);
-  const accent = plan.palette.primary;
+  const current = plan.scenes.find((s) => ms >= s.startMs && ms < s.endMs);
+  // Caption highlight follows the scene's background so it never disappears into it.
+  const accent = current ? scenePalette(plan.palette, current).primary : plan.palette.primary;
   // In split scenes the lower half is a graphic panel: keep captions on the speaker's half.
   const split = plan.scenes.some((s) => s.layout === 'speaker_split' && ms >= s.startMs && ms < s.endMs);
-  const top = split ? height * 0.36 : position === 'top' ? height * 0.16 : position === 'middle' ? height * 0.46 : height * 0.7;
+  const top = split ? height * 0.36 : position === 'top' ? height * 0.16 : position === 'middle' ? height * 0.46 : height * 0.74;
   const size = (mode === 'karaoke_line' ? 54 : 80) * u;
 
   return (

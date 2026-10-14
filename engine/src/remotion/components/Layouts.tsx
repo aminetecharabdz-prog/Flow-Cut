@@ -14,6 +14,7 @@ import type { LayoutId } from '../../plan/schema';
 import { useScene, useTheme } from '../context';
 import { alpha, clamp, isRtlText, mix, onColor, revealTimes, splitWords } from '../util';
 import { KineticText, useEnter } from './KineticText';
+import { Visual } from './Illustrations';
 import { Decorations, IconBadge, IconGlyph } from './Visuals';
 
 /** Content area that keeps clear of platform UI and captions. */
@@ -21,7 +22,7 @@ const useSafeArea = () => {
   const { width, height, vertical, plan, u } = useTheme();
   const captions = plan.captions.mode !== 'none' && plan.captions.position === 'bottom';
   const top = vertical ? height * 0.11 : height * 0.1;
-  const bottom = vertical ? height * (captions ? 0.25 : 0.17) : height * (captions ? 0.22 : 0.12);
+  const bottom = vertical ? height * (captions ? 0.3 : 0.17) : height * (captions ? 0.22 : 0.12);
   const side = 80 * u;
   return { top, bottom, side, innerW: (width - side * 2) / u, innerH: (height - top - bottom) / u };
 };
@@ -77,7 +78,7 @@ const Hook: React.FC = () => {
     <>
       <Decorations seed={scene.id} accent={accent} />
       <Stack gap={50}>
-        {scene.icon && <IconBadge icon={scene.icon} size={290} accent={accent} />}
+        {scene.visual ? <Visual id={scene.visual} size={640} /> : scene.icon && <IconBadge icon={scene.icon} size={290} accent={accent} />}
         <KineticText
           text={scene.title ?? ''}
           size={190}
@@ -95,11 +96,12 @@ const Statement: React.FC = () => {
   const { scene, accent } = useScene();
   const { u, plan, style, dark } = useTheme();
   const sa = useSafeArea();
-  const card = random(`card${scene.id}`) > 0.45;
+  // Cards only on the plain background; colour blocks already frame the scene.
+  const card = scene.surface === 'base' && random(`card${scene.id}`) > 0.45;
   const enter = useEnter(0, 60);
   const content = (
     <>
-      {scene.icon && <IconBadge icon={scene.icon} size={200} accent={accent} variant="soft" delay={3} />}
+      {scene.visual ? <Visual id={scene.visual} size={560} /> : scene.icon && <IconBadge icon={scene.icon} size={200} accent={accent} variant="soft" delay={3} />}
       <KineticText text={scene.title ?? ''} size={124} maxWidth={sa.innerW * (card ? 0.86 : 1)} emphasis={scene.emphasis} />
       <Subtitle text={scene.subtitle} />
     </>
@@ -655,7 +657,7 @@ const SpeakerSplit: React.FC = () => {
           paddingBottom: height * 0.06,
         }}
       >
-        {scene.icon && <IconBadge icon={scene.icon} size={190} accent={accent} delay={6} />}
+        {scene.visual ? <Visual id={scene.visual} size={300} /> : scene.icon && <IconBadge icon={scene.icon} size={190} accent={accent} delay={6} />}
         {scene.title && <KineticText text={scene.title} size={104} maxWidth={sa.innerW} emphasis={scene.emphasis} />}
         {scene.items.length > 0 && (
           <div style={{ display: 'flex', gap: 20 * u, flexWrap: 'wrap', justifyContent: 'center' }}>
@@ -727,6 +729,8 @@ const Cta: React.FC = () => {
             src={plan.logoUrl}
             style={{ maxWidth: 300 * u, maxHeight: 220 * u, objectFit: 'contain', transform: `scale(${spring({ frame, fps, config: style.spring })})` }}
           />
+        ) : scene.visual ? (
+          <Visual id={scene.visual} size={560} />
         ) : (
           scene.icon && <IconBadge icon={scene.icon} size={260} accent={accent} />
         )}
@@ -777,6 +781,56 @@ const Cta: React.FC = () => {
   );
 };
 
+/** Numbered badge for sequential explanations (1, 2, 3...). */
+const StepBadge: React.FC<{ n: number }> = ({ n }) => {
+  const { scene, accent } = useScene();
+  const { u, heading, style } = useTheme();
+  const frame = useCurrentFrame();
+  const { fps } = useVideoConfig();
+  const p = spring({ frame: frame - 2, fps, config: style.spring });
+  void scene;
+  return (
+    <div
+      style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: 16 * u,
+        padding: `${14 * u}px ${44 * u}px`,
+        borderRadius: 999,
+        background: accent,
+        color: onColor(accent),
+        fontFamily: heading,
+        fontWeight: 900,
+        fontSize: 92 * u,
+        lineHeight: 1.1,
+        transform: `scale(${p}) rotate(${(1 - p) * -20}deg)`,
+        boxShadow: `0 ${16 * u}px ${40 * u}px ${alpha(accent, 0.4)}`,
+      }}
+    >
+      {String(n).padStart(2, '0')}
+    </div>
+  );
+};
+
+/** Big animated illustration that shows what is being said, with a short title. */
+const VisualScene: React.FC = () => {
+  const { scene, accent } = useScene();
+  const sa = useSafeArea();
+  const flip = random(`vflip${scene.id}`) > 0.5;
+  return (
+    <>
+      <Decorations seed={scene.id} accent={accent} />
+      <Stack gap={36}>
+        {scene.step && <StepBadge n={scene.step} />}
+        {flip && scene.title && <KineticText text={scene.title} size={130} maxWidth={sa.innerW} maxHeight={sa.innerH * 0.3} emphasis={scene.emphasis} />}
+        <Visual id={scene.visual ?? 'bulb'} size={Math.min(900, sa.innerH * 0.68)} />
+        {!flip && scene.title && <KineticText text={scene.title} size={130} maxWidth={sa.innerW} maxHeight={sa.innerH * 0.3} emphasis={scene.emphasis} />}
+        <Subtitle text={scene.subtitle} />
+      </Stack>
+    </>
+  );
+};
+
 export const LAYOUTS: Record<LayoutId, React.FC> = {
   hook: Hook,
   statement: Statement,
@@ -791,4 +845,5 @@ export const LAYOUTS: Record<LayoutId, React.FC> = {
   speaker: SpeakerCallout,
   speaker_split: SpeakerSplit,
   cta: Cta,
+  visual: VisualScene,
 };

@@ -1,5 +1,7 @@
-import { ASPECT_SIZES, LAYOUT_IDS, type LayoutId, type Scene, type VideoPlanInput, type Word } from './schema';
-import { derivePalette, directionFor, PACE_SECONDS, STYLE_FONTS, type ProjectSettings } from './settings';
+import { ASPECT_SIZES, LAYOUT_IDS, SURFACES, VISUAL_IDS, type LayoutId, type Scene, type Surface, type VideoPlanInput, type VisualId, type Word } from './schema';
+import { derivePalette, directionFor, STYLE_FONTS, type ProjectSettings } from './settings';
+
+export { rulePlanner } from './rules';
 
 /** Planner output for one scene, anchored to transcript word indices. */
 export type SceneDraft = {
@@ -16,6 +18,12 @@ export type SceneDraft = {
   productImage?: number | null;
   /** Index into the project's media (photos/clips). */
   media?: number | null;
+  /** Animated illustration id. */
+  visual?: string | null;
+  /** Step number for sequential explanations. */
+  step?: number | null;
+  /** Scene background. */
+  surface?: string | null;
 };
 
 export type MediaRef = { url: string; type: 'image' | 'video' };
@@ -59,6 +67,9 @@ export const normalizeDrafts = (drafts: SceneDraft[], wordCount: number): SceneD
   return out;
 };
 
+const isVisual = (v: unknown): v is VisualId => typeof v === 'string' && (VISUAL_IDS as readonly string[]).includes(v);
+const isSurface = (v: unknown): v is Surface => typeof v === 'string' && (SURFACES as readonly string[]).includes(v);
+
 /** Make each layout valid for what's actually available. */
 const fitLayout = (d: SceneDraft, input: AssembleInput): LayoutId => {
   const has = {
@@ -73,6 +84,7 @@ const fitLayout = (d: SceneDraft, input: AssembleInput): LayoutId => {
   if ((layout === 'list' || layout === 'steps') && (d.items?.length ?? 0) < 2) layout = 'statement';
   if (layout === 'compare' && (d.items?.length ?? 0) < 2) layout = 'statement';
   if (layout === 'stat' && !d.stat) layout = 'statement';
+  if (layout === 'visual' && !isVisual(d.visual)) layout = 'statement';
   return layout;
 };
 
@@ -134,6 +146,9 @@ export const assemblePlan = (input: AssembleInput): VideoPlanInput => {
       subtitle: d.subtitle?.trim() || undefined,
       emphasis: (d.emphasis ?? []).filter(Boolean).slice(0, 3),
       icon: d.icon ? { name: d.icon } : undefined,
+      visual: isVisual(d.visual) ? d.visual : undefined,
+      step: d.step && d.step > 0 ? Math.round(d.step) : undefined,
+      surface: isSurface(d.surface) ? d.surface : 'base',
       items: (d.items ?? []).slice(0, 5).map((it) => ({ text: it.text, icon: it.icon ? { name: it.icon } : undefined })),
       stat: d.stat
         ? { value: Number(d.stat.value) || 0, decimals: Number.isInteger(Number(d.stat.value)) ? 0 : 1, prefix: d.stat.prefix ?? '', suffix: d.stat.suffix ?? '', label: d.stat.label }
@@ -164,61 +179,9 @@ export const assemblePlan = (input: AssembleInput): VideoPlanInput => {
     return acc;
   }, []);
   if (scenes.length === 0) {
-    scenes = [{ id: 's1', startMs: 0, endMs: durationMs, layout: 'hook', title: settings.title || ' ', emphasis: [], items: [], accent: 'primary' }];
+    scenes = [{ id: 's1', startMs: 0, endMs: durationMs, layout: 'hook', title: settings.title || ' ', emphasis: [], items: [], accent: 'primary', surface: 'base' }];
   }
 
   const total = finishTimeline(scenes, durationMs);
   return { ...planShell(input), durationMs: total, scenes };
-};
-
-// ---------------------------------------------------------------------------
-// Rule-based planner: used when no LLM key is configured or the LLM fails.
-// ---------------------------------------------------------------------------
-
-const STOP = new Set(['في', 'من', 'على', 'و', 'أن', 'ان', 'هذا', 'هذه', 'the', 'a', 'an', 'and', 'of', 'to', 'le', 'la', 'les', 'de', 'et', 'un', 'une']);
-
-const ICON_HINTS: [RegExp, string][] = [
-  [/وقت|ثاني|دقيق|ساع|time|temps|heure/i, 'clock'],
-  [/مال|سعر|دينار|دج|price|prix|money|argent/i, 'currency-circle-dollar'],
-  [/زبون|زبائن|عميل|client|customer/i, 'users-three'],
-  [/فيديو|video|vidéo|montage|مونتاج/i, 'video-camera'],
-  [/بيع|شراء|متجر|shop|achat|vente|store/i, 'shopping-bag'],
-  [/نجاح|ربح|success|réussite|win/i, 'trophy'],
-  [/مشكل|problem|problème/i, 'warning'],
-  [/حل|solution/i, 'lightbulb'],
-  [/صحة|طبيب|health|santé|doctor/i, 'heartbeat'],
-  [/توصيل|delivery|livraison/i, 'truck'],
-  [/هاتف|اتصل|phone|appel/i, 'phone'],
-  [/تعلم|درس|learn|cours/i, 'graduation-cap'],
-];
-
-const pickIcon = (text: string) => ICON_HINTS.find(([re]) => re.test(text))?.[1] ?? 'sparkle';
-
-export const rulePlanner = (words: Word[], settings: ProjectSettings): SceneDraft[] => {
-  if (words.length === 0) return [{ startWord: 0, endWord: 0, layout: 'hook', title: settings.title, emphasis: [] }];
-  const [minS, maxS] = PACE_SECONDS[settings.pace];
-  const groups: [number, number][] = [];
-  let start = 0;
-  for (let i = 0; i < words.length; i++) {
-    const dur = (words[i].endMs - words[start].startMs) / 1000;
-    const gap = i + 1 < words.length ? words[i + 1].startMs - words[i].endMs : 0;
-    const punct = /[.!?؟،,:;]$/.test(words[i].text);
-    if (i === words.length - 1 || dur >= maxS || (dur >= minS && (punct || gap > 300))) {
-      groups.push([start, i]);
-      start = i + 1;
-    }
-  }
-  const cycle: LayoutId[] =
-    settings.videoType === 'talking_head' ? ['speaker', 'speaker_split', 'speaker', 'icon_point'] : ['statement', 'icon_point', 'statement', 'hook'];
-  return groups.map(([a, b], gi) => {
-    const text = words.slice(a, b + 1).map((w) => w.text).join(' ');
-    const longest = words
-      .slice(a, b + 1)
-      .map((w) => w.text.replace(/[^\p{L}\p{N}]/gu, ''))
-      .filter((w) => !STOP.has(w))
-      .sort((x, y) => y.length - x.length)[0];
-    const isLast = gi === groups.length - 1;
-    const layout: LayoutId = gi === 0 ? 'hook' : isLast && settings.endCard ? 'cta' : cycle[gi % cycle.length];
-    return { startWord: a, endWord: b, layout, title: text, emphasis: longest ? [longest] : [], icon: pickIcon(text) };
-  });
 };

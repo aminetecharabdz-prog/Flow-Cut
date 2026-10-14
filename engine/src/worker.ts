@@ -155,7 +155,7 @@ const sceneToRow = (job: Row, s: Scene, i: number, words: Word[]) => ({
   spoken_text: words.filter((w) => w.startMs >= s.startMs && w.startMs < s.endMs).map((w) => w.text).join(' '),
   display_text: s.title ?? '',
   keywords: s.emphasis,
-  elements: { subtitle: s.subtitle ?? null, icon: s.icon?.name ?? null, items: s.items.map((it) => ({ text: it.text, icon: it.icon?.name ?? null })), stat: s.stat ?? null, product: s.product ?? null, media: s.media ?? null, accent: s.accent },
+  elements: { subtitle: s.subtitle ?? null, icon: s.icon?.name ?? null, items: s.items.map((it) => ({ text: it.text, icon: it.icon?.name ?? null })), stat: s.stat ?? null, product: s.product ?? null, media: s.media ?? null, accent: s.accent, visual: s.visual ?? null, step: s.step ?? null, surface: s.surface },
 });
 
 const rowToScene = (r: Row): Scene => {
@@ -174,6 +174,9 @@ const rowToScene = (r: Row): Scene => {
     product: e.product ?? undefined,
     media: e.media ?? undefined,
     accent: e.accent ?? 'primary',
+    visual: e.visual ?? undefined,
+    step: e.step ?? undefined,
+    surface: e.surface ?? 'base',
   };
 };
 

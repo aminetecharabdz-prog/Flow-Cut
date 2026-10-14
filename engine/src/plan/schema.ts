@@ -24,9 +24,23 @@ export const LAYOUT_IDS = [
   'speaker', // talking-head moment (speaker full frame, captions only)
   'speaker_split', // speaker on top, graphic panel below
   'cta', // end card / call to action
+  'visual', // big animated illustration with a short title
 ] as const;
 export const LayoutId = z.enum(LAYOUT_IDS);
 export type LayoutId = z.infer<typeof LayoutId>;
+
+/** Animated illustrations (remotion/components/Illustrations.tsx). */
+export const VISUAL_IDS = [
+  'package', 'truck', 'pins', 'shield', 'crack', 'frame', 'phone', 'chat', 'chart', 'clock',
+  'tag', 'checklist', 'house', 'magnifier', 'stars', 'gift', 'bulb', 'megaphone', 'rocket', 'heart',
+] as const;
+export const VisualId = z.enum(VISUAL_IDS);
+export type VisualId = z.infer<typeof VisualId>;
+
+/** Scene background: the video background, a brand colour block, or light paper. */
+export const SURFACES = ['base', 'primary', 'secondary', 'light', 'dark'] as const;
+export const Surface = z.enum(SURFACES);
+export type Surface = z.infer<typeof Surface>;
 
 export const FONT_IDS = [
   'cairo', 'tajawal', 'lalezar', 'el_messiri', 'readex_pro', 'alexandria', 'baloo_bhaijaan',
@@ -91,6 +105,12 @@ export const Scene = z.object({
   /** Words of `title` to highlight with the style's emphasis treatment. */
   emphasis: z.array(z.string()).default([]),
   icon: Icon.optional(),
+  /** Animated illustration for the scene. */
+  visual: VisualId.optional(),
+  /** Step number badge (1, 2, 3...) for sequential explanations. */
+  step: z.number().int().positive().optional(),
+  /** Background for this scene; varies between scenes for rhythm. */
+  surface: Surface.default('base'),
   items: z.array(Item).max(5).default([]),
   stat: z
     .object({
