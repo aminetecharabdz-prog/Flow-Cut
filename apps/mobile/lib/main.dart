@@ -2,9 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:flutter_localizations/flutter_localizations.dart';
 import 'package:supabase_flutter/supabase_flutter.dart';
 
-// Passed at build time: --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
-const supabaseUrl = String.fromEnvironment('SUPABASE_URL');
-const supabaseKey = String.fromEnvironment('SUPABASE_KEY');
+// Public client values (safe to ship; data is protected by RLS).
+// Can be overridden at build time with --dart-define=SUPABASE_URL=... --dart-define=SUPABASE_KEY=...
+const _envUrl = String.fromEnvironment('SUPABASE_URL');
+const _envKey = String.fromEnvironment('SUPABASE_KEY');
+const supabaseUrl = _envUrl == '' ? 'https://ukekgjillyhxbiexewpi.supabase.co' : _envUrl;
+const supabaseKey = _envKey == '' ? 'sb_publishable_AUhKj0D_LkM_cKkn2dWB9A_BFT5Zsij' : _envKey;
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
