@@ -1,0 +1,34 @@
+{
+  "name": "motioncut-engine",
+  "private": true,
+  "version": "0.1.0",
+  "type": "module",
+  "scripts": {
+    "typecheck": "tsc --noEmit",
+    "test": "tsx --test src/**/*.test.ts",
+    "studio": "remotion studio src/remotion/index.ts",
+    "render:sample": "tsx src/scripts/render-sample.ts",
+    "worker": "tsx src/worker.ts"
+  },
+  "dependencies": {
+    "@iconify-json/ph": "^1.2.2",
+    "@iconify/utils": "^3.1.7",
+    "@remotion/bundler": "^4.0.535",
+    "@remotion/cli": "^4.0.535",
+    "@remotion/google-fonts": "^4.0.535",
+    "@remotion/media-utils": "^4.0.535",
+    "@remotion/renderer": "^4.0.535",
+    "@supabase/supabase-js": "^2.117.3",
+    "react": "^19.3.0",
+    "react-dom": "^19.3.0",
+    "remotion": "^4.0.535",
+    "zod": "^3.25.76"
+  },
+  "devDependencies": {
+    "@iconify/types": "^2.0.0",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
+  }
+}
