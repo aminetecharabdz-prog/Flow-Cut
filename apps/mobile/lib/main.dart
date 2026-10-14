@@ -11,11 +11,11 @@ const supabaseKey = _envKey == '' ? 'sb_publishable_AUhKj0D_LkM_cKkn2dWB9A_BFT5Z
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  if (supabaseUrl.isNotEmpty && supabaseKey.isNotEmpty) {
-    await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey);
-  }
+  await Supabase.initialize(url: supabaseUrl, publishableKey: supabaseKey);
   runApp(const MotionCutApp());
 }
+
+const appVersion = '1.0.1';
 
 SupabaseClient get supabase => Supabase.instance.client;
 
@@ -38,24 +38,7 @@ class MotionCutApp extends StatelessWidget {
         colorScheme: ColorScheme.fromSeed(seedColor: const Color(0xFF7C3AED), brightness: Brightness.dark),
         useMaterial3: true,
       ),
-      home: supabaseUrl.isEmpty || supabaseKey.isEmpty ? const MissingConfigScreen() : const AuthGate(),
-    );
-  }
-}
-
-class MissingConfigScreen extends StatelessWidget {
-  const MissingConfigScreen({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    return const Scaffold(
-      body: Center(
-        child: Padding(
-          padding: EdgeInsets.all(24),
-          child: Text('إعدادات Supabase غير موجودة.\nأضف SUPABASE_URL و SUPABASE_KEY عند البناء.',
-              textAlign: TextAlign.center),
-        ),
-      ),
+      home: const AuthGate(),
     );
   }
 }
@@ -135,6 +118,8 @@ class _LoginScreenState extends State<LoginScreen> {
                 Text('MotionCut', textAlign: TextAlign.center, style: Theme.of(context).textTheme.headlineMedium),
                 const SizedBox(height: 4),
                 const Text('حوّل صوتك إلى فيديو موشن جرافيك', textAlign: TextAlign.center),
+                const SizedBox(height: 4),
+                const Text('الإصدار $appVersion', textAlign: TextAlign.center, style: TextStyle(fontSize: 12)),
                 const SizedBox(height: 32),
                 TextField(
                   controller: _email,
