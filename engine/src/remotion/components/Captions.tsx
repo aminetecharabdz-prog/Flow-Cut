@@ -45,7 +45,9 @@ export const Captions: React.FC<{ hiddenRanges?: [number, number][] }> = ({ hidd
   const text = chunk.words.map((w) => w.text).join(' ');
   const rtl = isRtlText(text);
   const accent = plan.palette.primary;
-  const top = position === 'top' ? height * 0.16 : position === 'middle' ? height * 0.46 : height * 0.7;
+  // In split scenes the lower half is a graphic panel: keep captions on the speaker's half.
+  const split = plan.scenes.some((s) => s.layout === 'speaker_split' && ms >= s.startMs && ms < s.endMs);
+  const top = split ? height * 0.36 : position === 'top' ? height * 0.16 : position === 'middle' ? height * 0.46 : height * 0.7;
   const size = (mode === 'karaoke_line' ? 54 : 80) * u;
 
   return (

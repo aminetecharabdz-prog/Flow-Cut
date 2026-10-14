@@ -636,7 +636,7 @@ const SpeakerSplit: React.FC = () => {
   const sa = useSafeArea();
   const p = spring({ frame, fps, config: style.spring });
   return (
-    <AbsoluteFill style={{ top: height * 0.5, transform: `translateY(${(1 - p) * 300 * u}px)` }}>
+    <AbsoluteFill style={{ top: height * 0.5, height: height * 0.5, transform: `translateY(${(1 - p) * 300 * u}px)` }}>
       <AbsoluteFill
         style={{
           background: `linear-gradient(180deg, ${mix(plan.palette.background, accent, 0.25)} 0%, ${plan.palette.background} 100%)`,
@@ -652,11 +652,11 @@ const SpeakerSplit: React.FC = () => {
           gap: 30 * u,
           paddingLeft: sa.side,
           paddingRight: sa.side,
-          paddingBottom: plan.captions.mode !== 'none' ? height * 0.14 : 40 * u,
+          paddingBottom: height * 0.06,
         }}
       >
-        {scene.icon && <IconBadge icon={scene.icon} size={170} accent={accent} delay={6} />}
-        {scene.title && <KineticText text={scene.title} size={80} maxWidth={sa.innerW} emphasis={scene.emphasis} />}
+        {scene.icon && <IconBadge icon={scene.icon} size={190} accent={accent} delay={6} />}
+        {scene.title && <KineticText text={scene.title} size={104} maxWidth={sa.innerW} emphasis={scene.emphasis} />}
         {scene.items.length > 0 && (
           <div style={{ display: 'flex', gap: 20 * u, flexWrap: 'wrap', justifyContent: 'center' }}>
             {scene.items.map((it, i) => (

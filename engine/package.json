@@ -11,6 +11,7 @@
     "worker": "tsx src/worker.ts"
   },
   "dependencies": {
+    "@anthropic-ai/sdk": "^0.133.0",
     "@iconify-json/ph": "^1.2.2",
     "@iconify/utils": "^3.1.7",
     "@remotion/bundler": "^4.0.535",
